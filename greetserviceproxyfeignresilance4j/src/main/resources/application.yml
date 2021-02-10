@@ -1,0 +1,86 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: egift-proxy
+server:
+  port: 8090
+  
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: true
+    service-url.defaultZone: http://localhost:8761/eureka/
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+        
+        
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+      
+    ratelimiters:
+      enabled: true
+      
+      
+feign:
+  client:
+    config:
+      GREET-SERVICE: 
+        request-interceptors:
+        - com.snkit.greetserviceproxy.TokenInterceptor
+        error-decoder: com.snkit.greetserviceproxy.FeignErrorDecoder
+        retryer: com.snkit.greetserviceproxy.CustomRetryer
+
+   
+
+resilience4j.circuitbreaker:
+    instances:
+        getEmployeeGetV2:
+            registerHealthIndicator: true
+            slidingWindowSize: 5
+            permittedNumberOfCallsInHalfOpenState: 3
+            slidingWindowType: count_based
+            minimumNumberOfCalls: 2
+            waitDurationInOpenState: 15s
+            failureRateThreshold: 50
+            eventConsumerBufferSize: 10
+        getEmployeeGet:
+            registerHealthIndicator: true
+            slidingWindowSize: 10
+            permittedNumberOfCallsInHalfOpenState: 3
+            slidingWindowType: count_based
+            minimumNumberOfCalls: 4
+            waitDurationInOpenState: 15s
+            failureRateThreshold: 50
+            eventConsumerBufferSize: 10
+resilience4j:
+  ratelimiter:
+    instances:
+        getEmployeeGet:
+             limit-refresh-period: 500
+             timeout-duration: 0
+             limit-for-period: 3
+             register-health-indicator: true
+        getEmployeeGetV2:
+             limit-refresh-period: 500
+             timeout-duration: 0
+             limit-for-period: 3
+             register-health-indicator: true
+  retry:
+    instances:
+        getEmployeeGetV2:
+            max-retry-attempts: 2
+            wait-duration: 1000
+            retry-exceptions:
+            - com.netflix.client.ClientException
+      
+          
+            
+
